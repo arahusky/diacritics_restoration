@@ -41,13 +41,16 @@ def main():
     dev_target_file = os.path.join(output_dir, args.filename_dev)
     test_target_file = os.path.join(output_dir, args.filename_test)
 
+    training_sentences_only = num_test_sentences + num_dev_sentences == 0
+
     line_count = args.num_lines
     print('Processing: {} sentences'.format(line_count))
     # line_permutation = np.random.permutation(line_count) -- permutation does not make sense here as testing sentences should be from non-seen articles
-    line_permutation = range(line_count)
-    dev_indices = line_permutation[:num_dev_sentences]
-    test_indices = line_permutation[num_dev_sentences:num_dev_sentences + num_test_sentences]
-    train_indices = line_permutation[num_dev_sentences + num_test_sentences:]
+    if not training_sentences_only:
+        line_permutation = range(line_count)
+        dev_indices = line_permutation[:num_dev_sentences]
+        test_indices = line_permutation[num_dev_sentences:num_dev_sentences + num_test_sentences]
+        train_indices = line_permutation[num_dev_sentences + num_test_sentences:]
 
     line_index = 0
     with io.open(train_target_file, 'w', encoding='utf8') as train_target_writer, \
@@ -61,21 +64,23 @@ def main():
             # convert to lower-case
             line = line.lower()
 
-            current_target_writer = None
-            if line_index in train_indices:
-                current_target_writer = train_target_writer
+            current_target_writer = train_target_writer
 
-                if len(line) < min_chars:
-                    line_index += 1
-                    continue
+            if not training_sentences_only:
+                if line_index in train_indices:
+                    current_target_writer = train_target_writer
 
-            elif line_index in dev_indices:
-                current_target_writer = dev_target_writer
-            elif line_index in test_indices:
-                current_target_writer = test_target_writer
-            else:
-                # should never happen
-                raise ValueError('Something went terribly wrong.')
+                    if len(line) < min_chars:
+                        line_index += 1
+                        continue
+
+                elif line_index in dev_indices:
+                    current_target_writer = dev_target_writer
+                elif line_index in test_indices:
+                    current_target_writer = test_target_writer
+                else:
+                    # should never happen
+                    raise ValueError('Something went terribly wrong.')
 
             current_target_writer.write(u'{}\n'.format(line))
 
