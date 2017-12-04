@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 languages_short=(cs) # vi de)
 languages_long=(ces) # vie deu)
 save_dir=~/troja/diacritization_data/

@@ -1,4 +1,5 @@
 import io
+import re
 
 '''
 Remove invalid UTF-8, remove all wiki data and addtional information (e.g. web the page was extracted from)
@@ -13,6 +14,7 @@ def main():
     parser.add_argument("output_file", type=str, help="Path to result (filtered) file.")
     args = parser.parse_args()
 
+    wikipedia_article_regex = re.compile('^df6fa1abb58549287111ba8d776733e9 uri:https://.*.wikipedia.org/')
     with io.open(args.input_file, encoding='utf8', mode='r') as reader:
         with io.open(args.output_file, 'w', encoding='utf8') as writer:
             skipping = True  # whether current url is wiki
@@ -30,7 +32,7 @@ def main():
                 line = line.strip()
 
                 if line.startswith('df6fa1abb58549287111ba8d776733e9'):
-                    if line.startswith('df6fa1abb58549287111ba8d776733e9 uri:https://cs.wikipedia.org/'):
+                    if wikipedia_article_regex.match(line):
                         # ignore wikipedia texts
                         # writer.write('{}\n'.format(line))
                         skipping = True

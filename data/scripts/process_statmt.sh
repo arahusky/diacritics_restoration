@@ -9,6 +9,8 @@
 # for STATMT data files identifiers see http://data.statmt.org/ngrams/raw/
 # for MOSES codes see https://github.com/moses-smt/mosesdecoder/tree/master/scripts/share/nonbreaking_prefixes
 
+set -e
+
 # testing -- et.2015_27
 STATMT_ID=${1:-"cs.2015_22"}
 LANG_MOSES=${2:-"cs"} # perl
@@ -39,7 +41,7 @@ MIN_CHARS=100 # minimal number characters the sentence has to have to be include
 STATMT_TRAINING_CANDIDATES_FILENAME=${DATA_FOLDER}/statmt_${STATMT_ID}_train_candidate_target_sentences.txt
 echo "Lower-casing, striping and removing lines with low number of characters"
 num_lines=$(cat ${DATA_FOLDER}/statmt_sentences_${STATMT_ID}.txt | wc -l)
-(echo ${num_lines}; cat ${STATMT_SENTENCES_FILENAME}) | python3 create_dataset.py ${DATA_FOLDER} \
+cat ${STATMT_SENTENCES_FILENAME} | python3 create_dataset.py ${num_lines} ${DATA_FOLDER} \
     --min_chars ${MIN_CHARS} --dev_sentences 0 --test_sentences 0 --filename_train ${STATMT_TRAINING_CANDIDATES_FILENAME} \
     --filename_dev ${DATA_FOLDER}/pom_dev.txt --filename_test ${DATA_FOLDER}/pom_test.txt
 

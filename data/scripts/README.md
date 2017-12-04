@@ -14,7 +14,7 @@ bash process_statmt.sh et.2015_27 et /home/arahusky/troja/w2c_data/et n
 ```
 
 
-
+```
 W2C languages:
 Afrikaans			afr
 Tosk Albanian			als
@@ -136,3 +136,4 @@ Walloon			wln
 Yiddish			yid
 Yoruba			yor
 Chinese			zho
+```

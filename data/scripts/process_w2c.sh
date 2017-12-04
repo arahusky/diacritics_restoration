@@ -9,6 +9,8 @@
 # for W2C codes see https://ufal.mff.cuni.cz/~majlis/w2c/download.html
 # for MOSES codes see https://github.com/moses-smt/mosesdecoder/tree/master/scripts/share/nonbreaking_prefixes
 
+set -e
+
 LANG_W2C=${1:-"ces"}
 LANG_MOSES=${2:-"cs"} # perl
 DATA_FOLDER=${3:-"/home/arahusky/troja/w2c_data/cs"}
@@ -29,7 +31,7 @@ cat ${DATA_FOLDER}/w2c_data.txt | perl split_sentences.perl -l ${LANG_MOSES} | s
 # split into training, devel and testing sets
 echo "Splitting into train/dev/test sets"
 num_lines=$(cat ${DATA_FOLDER}/w2c_sentences.txt | wc -l)
-(echo ${num_lines}; cat ${DATA_FOLDER}/w2c_sentences.txt) | python3 create_dataset.py ${DATA_FOLDER}
+cat ${DATA_FOLDER}/w2c_sentences.txt | python3 create_dataset.py ${num_lines} ${DATA_FOLDER}
 #rm ${DATA_FOLDER}/w2c_sentences.txt
 
 # ensure that the three created sets are disjoint
