@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     with io.open(dataset_files['train_targets'], 'r', encoding='utf8') as reader:
         target_sentences = reader.read().splitlines()
-
+    # TODO refactor several lines up
     if args.num_sentences != -1:
         input_sentences = input_sentences[:args.num_sentences]
         target_sentences = target_sentences[:args.num_sentences]

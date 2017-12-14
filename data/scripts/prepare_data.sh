@@ -15,7 +15,7 @@ do
 
     for statmt_datafile in ${statmt_datafiles}
     do
-        bash process_statmt.sh ${statmt_datafile} ${languages_short[$i]} ${lang_save_dir} y
+        bash process_statmt.sh ${statmt_datafile} ${languages_short[$i]} ${lang_save_dir} n
     done
 done
 

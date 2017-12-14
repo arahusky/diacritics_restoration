@@ -66,14 +66,13 @@ def main():
 
             current_target_writer = train_target_writer
 
-            if not training_sentences_only:
+            if training_sentences_only:
+                if len(line) < min_chars:
+                    line_index += 1
+                    continue
+            else:
                 if line_index in train_indices:
                     current_target_writer = train_target_writer
-
-                    if len(line) < min_chars:
-                        line_index += 1
-                        continue
-
                 elif line_index in dev_indices:
                     current_target_writer = dev_target_writer
                 elif line_index in test_indices:

@@ -21,7 +21,7 @@ mkdir -p ${DATA_FOLDER}
 # curl "http://ufal.mff.cuni.cz/~majlis/w2c/download.php?lang=${LANG_W2C}&type=wiki" -o ${DATA_FOLDER}/temp_w2c_.${LANG_W2C}.txt.gz
 cp /net/data/W2C/W2C_WIKI/2011-11-50000-10000/${LANG_W2C}_50000.txt.gz ${DATA_FOLDER}/temp_w2c_.${LANG_W2C}.txt.gz
 gunzip -c /${DATA_FOLDER}/temp_w2c_.${LANG_W2C}.txt.gz > ${DATA_FOLDER}/w2c_data.txt
-rm${DATA_FOLDER}/temp_w2c_.${LANG_W2C}.txt.gz
+rm ${DATA_FOLDER}/temp_w2c_.${LANG_W2C}.txt.gz
 
 # split into sentences
 echo "Splitting into sentences"
