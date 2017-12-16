@@ -105,16 +105,17 @@ if __name__ == "__main__":
     print(dataset_files)
     # load train input and train target sentences
     print('Loading train data')
+    num_sentences_limit = args.num_sentences if args.num_sentences > 0 else float("inf")
     input_sentences, target_sentences = [], []
-    with io.open(dataset_files['train_inputs'], 'r', encoding='utf8') as reader:
-        input_sentences = reader.read().splitlines()
-
-    with io.open(dataset_files['train_targets'], 'r', encoding='utf8') as reader:
-        target_sentences = reader.read().splitlines()
-    # TODO refactor several lines up
-    if args.num_sentences != -1:
-        input_sentences = input_sentences[:args.num_sentences]
-        target_sentences = target_sentences[:args.num_sentences]
+    with io.open(dataset_files['train_inputs'], 'r', encoding='utf8') as inputs_reader:
+        with io.open(dataset_files['train_targets'], 'r', encoding='utf8') as targets_reader:
+            num_lines_read = 0
+            for input_line, target_line in zip(inputs_reader, targets_reader):
+                input_sentences.append(input_line.strip())
+                target_sentences.append(target_line.strip())
+                num_lines_read += 1
+                if num_lines_read > num_sentences_limit:
+                    break
 
     input_char_vocab, target_char_vocab = None, None
     if args.input_char_vocab != '':
