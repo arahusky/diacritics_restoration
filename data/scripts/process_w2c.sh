@@ -53,3 +53,11 @@ echo "Stripping diacritics"
 cat ${DATA_FOLDER}/target_train.txt | python3 diacritization_stripping.py ${DATA_FOLDER}/input_train.txt ${LANG_MOSES} --uninames
 cat ${DATA_FOLDER}/target_dev.txt | python3 diacritization_stripping.py ${DATA_FOLDER}/input_dev.txt ${LANG_MOSES} --uninames
 cat ${DATA_FOLDER}/target_test.txt | python3 diacritization_stripping.py ${DATA_FOLDER}/input_test.txt ${LANG_MOSES} --uninames
+
+# create experiment configuration file
+echo "train_inputs input_train.txt" > ${DATA_FOLDER}/w2c_configuration.txt
+echo "train_targets target_train" >> ${DATA_FOLDER}/w2c_configuration.txt
+echo "dev_inputs input_dev.txt" >> ${DATA_FOLDER}/w2c_configuration.txt
+echo "dev_targets target_dev.txt" >> ${DATA_FOLDER}/w2c_configuration.txt
+echo "test_inputs input_test.txt" >> ${DATA_FOLDER}/w2c_configuration.txt
+echo "test_targets target_test.txt" >> ${DATA_FOLDER}/w2c_configuration.txt

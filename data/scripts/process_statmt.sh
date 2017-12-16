@@ -23,7 +23,7 @@ STATMT_XZ_FILENAME=${DATA_FOLDER}/temp_${STATMT_ID}.raw.xz
 STATMT_EXTRACTED_FILENAME=${DATA_FOLDER}/statmt_data_${STATMT_ID}.txt
 curl "http://web-language-models.s3-website-us-east-1.amazonaws.com/ngrams/${LANG_MOSES}/raw/${LANG_MOSES}.${STATMT_ID}.raw.xz" -o ${STATMT_XZ_FILENAME}
 xzcat ${STATMT_XZ_FILENAME} > ${STATMT_EXTRACTED_FILENAME}
-rm ${STATMT_XZ_FILENAME}
+# rm ${STATMT_XZ_FILENAME}
 
 # remove invalid UTF-8, all wiki and additional information
 STATMT_FILTERED_DATA_FILENAME=${DATA_FOLDER}/statmt_filtered_data_${STATMT_ID}.txt
@@ -78,4 +78,17 @@ if [ ${DO_APPEND} = "y" ]; then
 
     rm ${TRAIN_INPUT_SENTENCES_FILENAME}
     rm ${TRAIN_TARGET_SENTENCES_FILENAME}
+
+    # create experiment configuration file
+    echo "train_inputs input_train.txt" > ${DATA_FOLDER}/statmt_configuration.txt
+    echo "train_targets target_train" >> ${DATA_FOLDER}/statmt_configuration.txt
+else
+    # create experiment configuration file
+    echo "train_inputs statmt_${STATMT_ID}_train_input_sentences.txt.txt" > ${DATA_FOLDER}/statmt_configuration.txt
+    echo "train_targets statmt_${STATMT_ID}_train_target_sentences.txt" >> ${DATA_FOLDER}/statmt_configuration.txt
 fi
+
+echo "dev_inputs input_dev.txt" >> ${DATA_FOLDER}/statmt_configuration.txt
+echo "dev_targets target_dev.txt" >> ${DATA_FOLDER}/statmt_configuration.txt
+echo "test_inputs input_test.txt" >> ${DATA_FOLDER}/statmt_configuration.txt
+echo "test_targets target_test.txt" >> ${DATA_FOLDER}/statmt_configuration.txt
