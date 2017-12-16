@@ -79,8 +79,8 @@ with io.open(args.out_file, 'w', encoding='utf8') as writer:
                 # check minimal amount of diacritics
                 words_no_diacritics = output.split(' ')
                 words_diacritics = line.split(' ')
-                words_with_diacritics_rate = 100 - 100.0 * sum(
-                    [words_no_diacritics[i] == words_diacritics[i] for i in range(len(words_diacritics))]) / len(
+                words_with_diacritics_rate = 100.0 * sum(
+                    [words_no_diacritics[i] != words_diacritics[i] for i in range(len(words_diacritics))]) / len(
                     words_diacritics)
                 if words_with_diacritics_rate < required_words_with_diacritics_rate:
                     continue

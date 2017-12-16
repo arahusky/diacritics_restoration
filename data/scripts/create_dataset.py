@@ -21,6 +21,8 @@ def main():
     parser.add_argument("output_dir", type=str, default="dataset", help="Path to folder to store created dataset.")
     parser.add_argument("--min_chars", type=int, default=0,
                         help="Minimal number of characters the training sentence has to have.")
+    parser.add_argument("--max_chars", type=int, default=float("inf"),
+                        help="Maximal number of characters the training sentence has to have.")
     parser.add_argument("--dev_sentences", type=int, default=20000, help="Number of sentences in dev set.")
     parser.add_argument("--test_sentences", type=int, default=15000, help="Number of sentences in test set.")
     parser.add_argument("--filename_train", type=str, default='target_train.txt', help="")
@@ -29,6 +31,7 @@ def main():
     args = parser.parse_args()
 
     min_chars = args.min_chars
+    max_chars = args.max_chars
     num_dev_sentences = args.dev_sentences
     num_test_sentences = args.test_sentences
 
@@ -67,7 +70,7 @@ def main():
             current_target_writer = train_target_writer
 
             if training_sentences_only:
-                if len(line) < min_chars:
+                if len(line) < min_chars or len(line) > max_chars:
                     line_index += 1
                     continue
             else:
