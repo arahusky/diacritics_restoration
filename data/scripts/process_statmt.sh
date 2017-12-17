@@ -21,7 +21,9 @@ DO_APPEND=${4:-n} # append to existing training corpus?
 echo "Downloading and unzipping data"
 STATMT_XZ_FILENAME=${DATA_FOLDER}/temp_${STATMT_ID}.raw.xz
 STATMT_EXTRACTED_FILENAME=${DATA_FOLDER}/statmt_data_${STATMT_ID}.txt
-curl "http://web-language-models.s3-website-us-east-1.amazonaws.com/ngrams/${LANG_MOSES}/raw/${LANG_MOSES}.${STATMT_ID}.raw.xz" -o ${STATMT_XZ_FILENAME}
+if [ ! -f ${STATMT_XZ_FILENAME} ]; then
+    curl "http://web-language-models.s3-website-us-east-1.amazonaws.com/ngrams/${LANG_MOSES}/raw/${LANG_MOSES}.${STATMT_ID}.raw.xz" -o ${STATMT_XZ_FILENAME}
+fi
 xzcat ${STATMT_XZ_FILENAME} > ${STATMT_EXTRACTED_FILENAME}
 # rm ${STATMT_XZ_FILENAME}
 
@@ -84,7 +86,7 @@ if [ ${DO_APPEND} = "y" ]; then
     echo "train_targets target_train" >> ${DATA_FOLDER}/statmt_configuration.txt
 else
     # create experiment configuration file
-    echo "train_inputs statmt_${STATMT_ID}_train_input_sentences.txt.txt" > ${DATA_FOLDER}/statmt_configuration.txt
+    echo "train_inputs statmt_${STATMT_ID}_train_input_sentences.txt" > ${DATA_FOLDER}/statmt_configuration.txt
     echo "train_targets statmt_${STATMT_ID}_train_target_sentences.txt" >> ${DATA_FOLDER}/statmt_configuration.txt
 fi
 
