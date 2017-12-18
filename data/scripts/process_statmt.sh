@@ -17,14 +17,14 @@ LANG_MOSES=${2:-"cs"} # perl
 DATA_FOLDER=${3:-"/home/arahusky/troja/w2c_data/cs"}
 DO_APPEND=${4:-n} # append to existing training corpus?
 
-# download and unzip STATMT wiki corpora for given language
+# download and unzip STATMT wiki corpora for given language -- limit unzipping by 10 hours
 echo "Downloading and unzipping data"
 STATMT_XZ_FILENAME=${DATA_FOLDER}/temp_${STATMT_ID}.raw.xz
 STATMT_EXTRACTED_FILENAME=${DATA_FOLDER}/statmt_data_${STATMT_ID}.txt
 if [ ! -f ${STATMT_XZ_FILENAME} ]; then
     curl "http://web-language-models.s3-website-us-east-1.amazonaws.com/ngrams/${LANG_MOSES}/raw/${LANG_MOSES}.${STATMT_ID}.raw.xz" -o ${STATMT_XZ_FILENAME}
 fi
-xzcat ${STATMT_XZ_FILENAME} > ${STATMT_EXTRACTED_FILENAME}
+timeout 10h bash -c "xzcat ${STATMT_XZ_FILENAME} > ${STATMT_EXTRACTED_FILENAME}"
 # rm ${STATMT_XZ_FILENAME}
 
 # remove invalid UTF-8, all wiki and additional information
@@ -32,10 +32,10 @@ STATMT_FILTERED_DATA_FILENAME=${DATA_FOLDER}/statmt_filtered_data_${STATMT_ID}.t
 python3 preprocess_statmt.py ${STATMT_EXTRACTED_FILENAME} ${STATMT_FILTERED_DATA_FILENAME}
 rm ${STATMT_EXTRACTED_FILENAME}
 
-# split into sentences
+# split into sentences -- limit by 40hours
 echo "Splitting into sentences"
 STATMT_SENTENCES_FILENAME=${DATA_FOLDER}/statmt_sentences_${STATMT_ID}.txt
-cat ${STATMT_FILTERED_DATA_FILENAME} | perl split_sentences.perl -l ${LANG_MOSES} | sed -e '/<P>/d' > ${STATMT_SENTENCES_FILENAME}
+timeout 40h bash -c "cat ${STATMT_FILTERED_DATA_FILENAME} | perl split_sentences.perl -l ${LANG_MOSES} | sed -e '/<P>/d' > ${STATMT_SENTENCES_FILENAME}"
 rm ${STATMT_FILTERED_DATA_FILENAME}
 
 # split into training, devel and testing sets
