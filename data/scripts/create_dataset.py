@@ -23,8 +23,8 @@ def main():
                         help="Minimal number of characters the training sentence has to have.")
     parser.add_argument("--max_chars", type=int, default=float("inf"),
                         help="Maximal number of characters the training sentence has to have.")
-    parser.add_argument("--dev_sentences", type=int, default=20000, help="Number of sentences in dev set.")
-    parser.add_argument("--test_sentences", type=int, default=15000, help="Number of sentences in test set.")
+    parser.add_argument("--dev_sentences", type=int, default=15000, help="Number of sentences in dev set.")
+    parser.add_argument("--test_sentences", type=int, default=30000, help="Number of sentences in test set.")
     parser.add_argument("--filename_train", type=str, default='target_train.txt', help="")
     parser.add_argument("--filename_dev", type=str, default='target_dev.txt', help="")
     parser.add_argument("--filename_test", type=str, default='target_test.txt', help="")
