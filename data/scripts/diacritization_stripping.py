@@ -32,7 +32,8 @@ word_diacritics_rate_dict = {
     'nb': 11.7,  # Norwegian-Bokmaal
     'da': 10.2,  # Danish
     'de': 8.3,  # German
-    'hr': 16.7  # Croatian
+    'hr': 16.7,  # Croatian
+    'sr': 15.0 # Serbian
 }
 
 parser = argparse.ArgumentParser()
