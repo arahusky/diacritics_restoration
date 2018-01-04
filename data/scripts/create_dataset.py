@@ -62,7 +62,7 @@ def main():
         train_indices = line_permutation[num_dev_sentences + num_test_sentences:]
 
     line_index = 0
-    train_sentences_pairs = {} # sentence_md5_hash : occurence_count
+    train_sentences_pairs = defaultdict(int) # sentence_md5_hash : occurence_count
     with io.open(train_target_file, 'w', encoding='utf8') as train_target_writer, \
             io.open(dev_target_file, 'w', encoding='utf8') as dev_target_writer, \
             io.open(test_target_file, 'w', encoding='utf8') as test_target_writer:
