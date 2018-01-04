@@ -1,5 +1,4 @@
-import utils
-import logging
+from . import utils
 
 
 def c2c_per_char_accuracy(sentences, lengths, targets, vocabulary):
@@ -47,16 +46,15 @@ def c2c_per_word_accuracy(sentences, lengths, targets, vocabulary, whitespace_to
         #     print(gold_sentence)
         #     debug += 1
         gold, system = map(lambda s: s.split(" "), [gold_sentence, system_sentence])
-        if len(gold) != len(system):
-            # print(gold)
-            # print(system)
-            raise ValueError("The given files to not contain the same number of words")
-
-        # Accuracy
         total_words += len(gold)
+
+        if len(gold) != len(system):
+            # consider all words being wrong
+            continue
+
+        # compute word accuracy
         for i in range(len(gold)):
             if gold[i] == system[i]:
                 words_correct += 1
-
 
     return words_correct / total_words

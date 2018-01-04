@@ -41,12 +41,14 @@ rm ${STATMT_FILTERED_DATA_FILENAME}
 # split into training, devel and testing sets
 MIN_CHARS=100 # minimal number characters the sentence has to have to be included in the training set (short sentences are assumed to be noisiest)
 MAX_CHARS=300 # maximal number characters the sentence has to have to be included in the training set (long sentences are assumed to be noisiest and also RNN does process long sentences too slowly)
+MAX_REP_TRAIN_SENTENCES=100 # maximal number of identical training sentences
 STATMT_TRAINING_CANDIDATES_FILENAME=${DATA_FOLDER}/statmt_${STATMT_ID}_train_candidate_target_sentences.txt
 echo "Lower-casing, striping and removing lines with low number of characters"
 num_lines=$(cat ${DATA_FOLDER}/statmt_sentences_${STATMT_ID}.txt | wc -l)
 cat ${STATMT_SENTENCES_FILENAME} | python3 create_dataset.py ${num_lines} ${DATA_FOLDER} \
     --min_chars ${MIN_CHARS} --max_chars ${MAX_CHARS} --dev_sentences 0 --test_sentences 0 --filename_train \
-    ${STATMT_TRAINING_CANDIDATES_FILENAME} --filename_dev ${DATA_FOLDER}/pom_dev.txt --filename_test ${DATA_FOLDER}/pom_test.txt
+    ${STATMT_TRAINING_CANDIDATES_FILENAME} --filename_dev ${DATA_FOLDER}/pom_dev.txt --filename_test ${DATA_FOLDER}/pom_test.txt \
+    --max_rep_train ${MAX_REP_TRAIN_SENTENCES}
 
 rm ${DATA_FOLDER}/pom_dev.txt
 rm ${DATA_FOLDER}/pom_test.txt

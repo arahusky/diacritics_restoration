@@ -8,8 +8,10 @@ import os
 import numpy as np
 from tensorflow.python.ops import rnn_cell
 
-import constants
-from translation.custom_rnn_cells.layerNormGRUCell import LayerNormGRUCell as LayerNormGRUCell
+from . import constants
+
+
+# from translation.custom_rnn_cells.layerNormGRUCell import LayerNormGRUCell as LayerNormGRUCell
 
 
 def invert_vocabulary(vocabulary):
@@ -58,8 +60,8 @@ def rnn_string_to_func(rnn_string):
         return rnn_cell.GRUCell
     elif rnn_string == 'lstm':
         return rnn_cell.BasicLSTMCell
-    elif rnn_string == 'gru_ln':
-        return LayerNormGRUCell
+    # elif rnn_string == 'gru_ln':
+    #    return LayerNormGRUCell
     else:
         raise Exception("model type not supported: {}".format(rnn_string))
 

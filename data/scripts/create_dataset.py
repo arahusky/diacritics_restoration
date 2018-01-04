@@ -3,6 +3,8 @@ import numpy as np
 import os
 import io
 import sys
+from hashlib import md5
+from collections import defaultdict
 
 '''
 input stream:
@@ -28,12 +30,16 @@ def main():
     parser.add_argument("--filename_train", type=str, default='target_train.txt', help="")
     parser.add_argument("--filename_dev", type=str, default='target_dev.txt', help="")
     parser.add_argument("--filename_test", type=str, default='target_test.txt', help="")
+
+    parser.add_argument("--max_rep_train", type=int, default=sys.maxsize,
+                        help="Maximal number of identical sentences in training set.")
     args = parser.parse_args()
 
     min_chars = args.min_chars
     max_chars = args.max_chars
     num_dev_sentences = args.dev_sentences
     num_test_sentences = args.test_sentences
+    max_rep_train_sentences = args.max_rep_train
 
     # create directory for saving dataset
     output_dir = args.output_dir
@@ -56,6 +62,7 @@ def main():
         train_indices = line_permutation[num_dev_sentences + num_test_sentences:]
 
     line_index = 0
+    train_sentences_pairs = {} # sentence_md5_hash : occurence_count
     with io.open(train_target_file, 'w', encoding='utf8') as train_target_writer, \
             io.open(dev_target_file, 'w', encoding='utf8') as dev_target_writer, \
             io.open(test_target_file, 'w', encoding='utf8') as test_target_writer:
@@ -75,6 +82,12 @@ def main():
                     continue
             else:
                 if line_index in train_indices:
+                    sentence_hash = md5(line.encode()).hexdigest()
+                    train_sentences_pairs[sentence_hash] += 1
+                    if train_sentences_pairs[sentence_hash] > max_rep_train_sentences:
+                        line_index += 1
+                        continue
+
                     current_target_writer = train_target_writer
                 elif line_index in dev_indices:
                     current_target_writer = dev_target_writer
