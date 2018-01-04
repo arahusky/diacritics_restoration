@@ -191,8 +191,6 @@ class ParalelSentencesDataset():
         input_data = []
         target_data = []
         for input_sentence, target_sentence in zip(input_sentences, target_sentences):
-            print(input_sentence, target_sentence)
-
             if len(input_sentence) != len(target_sentence):
                 raise ValueError(
                     "Input and target sentence do not have same lengths!:\n input: {} \n target: {}".format(
@@ -327,7 +325,8 @@ class ParalelSentencesDataset():
         return batch_inputs, batch_input_lens, batch_targets
 
     def get_evaluation_sets(self):
-        return [('dev', self.get_validation_set), ('test', self.get_test_set)]
+        return [('dev', self.get_validation_set)]
+        # return [('dev', self.get_validation_set), ('test', self.get_test_set)]
 
     def reset_batch_pointer(self):
         '''

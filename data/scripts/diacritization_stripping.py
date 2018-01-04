@@ -33,30 +33,11 @@ word_diacritics_rate_dict = {
     'da': 10.2,  # Danish
     'de': 8.3,  # German
     'hr': 16.7,  # Croatian
-    'sr': 15.0 # Serbian
+    'sr': 15.0  # Serbian
 }
 
-parser = argparse.ArgumentParser()
-parser.add_argument("out_file", type=str, help="Path to the file to store sentences without diacritics")
-parser.add_argument("language", type=str, help="Language of the incoming text (shorter format -- e.g. cs, de).")
-parser.add_argument("--uninorms", action="store_true",
-                    help="Use diacritization stripping based on Unicode Normalization")
-parser.add_argument("--uninames", action="store_true",
-                    help="Use diacritization stripping based on Unicode Names")
-parser.add_argument("--diacritics_percentage", action="store_true", default=False,
-                    help="Each line must have at least given amount of words with diacritics (see word_diacritics_rate)")
-parser.add_argument("--out_input_file", type=str, help="Accompanies diacritics_percentage.")
-parser.add_argument("--verbose", "-v", action="store_true",
-                    help="Also compute statistics of the stripping")
-args = parser.parse_args()
 
-language = args.language
-
-maps = []
-if args.uninames: maps.append(diacritization_stripping_data.strip_diacritization_uninames)
-if args.uninorms: maps.append(diacritization_stripping_data.strip_diacritization_uninorms)
-
-def strip_diacritics(line):
+def strip_diacritics(line, maps=[diacritization_stripping_data.strip_diacritization_uninames]):
     output = ""
     for c in line:
         for m in maps:
@@ -67,27 +48,53 @@ def strip_diacritics(line):
             output += c
     return output
 
-with io.open(args.out_file, 'w', encoding='utf8') as writer:
-    if args.diacritics_percentage:
-        if language not in word_diacritics_rate_dict.keys():
-            raise IOError('Provided language is not supported: {}'.format(language))
-        required_words_with_diacritics_rate = word_diacritics_rate_dict[language]
 
-        with io.open(args.out_input_file, 'w', encoding='utf8') as input_writer:
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("out_file", type=str, help="Path to the file to store sentences without diacritics")
+    parser.add_argument("language", type=str, help="Language of the incoming text (shorter format -- e.g. cs, de).")
+    parser.add_argument("--uninorms", action="store_true",
+                        help="Use diacritization stripping based on Unicode Normalization")
+    parser.add_argument("--uninames", action="store_true",
+                        help="Use diacritization stripping based on Unicode Names")
+    parser.add_argument("--diacritics_percentage", action="store_true", default=False,
+                        help="Each line must have at least given amount of words with diacritics (see word_diacritics_rate)")
+    parser.add_argument("--out_input_file", type=str, help="Accompanies diacritics_percentage.")
+    parser.add_argument("--verbose", "-v", action="store_true",
+                        help="Also compute statistics of the stripping")
+    args = parser.parse_args()
+
+    language = args.language
+
+    maps = []
+    if args.uninames: maps.append(diacritization_stripping_data.strip_diacritization_uninames)
+    if args.uninorms: maps.append(diacritization_stripping_data.strip_diacritization_uninorms)
+
+    with io.open(args.out_file, 'w', encoding='utf8') as writer:
+        if args.diacritics_percentage:
+            if language not in word_diacritics_rate_dict.keys():
+                raise IOError('Provided language is not supported: {}'.format(language))
+            required_words_with_diacritics_rate = word_diacritics_rate_dict[language]
+
+            with io.open(args.out_input_file, 'w', encoding='utf8') as input_writer:
+                for line in io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8'):
+                    output = strip_diacritics(line, maps)
+
+                    # check minimal amount of diacritics
+                    words_no_diacritics = output.split(' ')
+                    words_diacritics = line.split(' ')
+                    words_with_diacritics_rate = 100.0 * sum(
+                        [words_no_diacritics[i] != words_diacritics[i] for i in range(len(words_diacritics))]) / len(
+                        words_diacritics)
+                    if words_with_diacritics_rate < required_words_with_diacritics_rate:
+                        continue
+
+                    input_writer.write(line)
+                    writer.write(output)
+        else:
             for line in io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8'):
-                output = strip_diacritics(line)
+                writer.write(strip_diacritics(line, maps))
 
-                # check minimal amount of diacritics
-                words_no_diacritics = output.split(' ')
-                words_diacritics = line.split(' ')
-                words_with_diacritics_rate = 100.0 * sum(
-                    [words_no_diacritics[i] != words_diacritics[i] for i in range(len(words_diacritics))]) / len(
-                    words_diacritics)
-                if words_with_diacritics_rate < required_words_with_diacritics_rate:
-                    continue
 
-                input_writer.write(line)
-                writer.write(output)
-    else:
-        for line in io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8'):
-            writer.write(strip_diacritics(line))
+if __name__ == '__main__':
+    main()
