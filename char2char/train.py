@@ -219,9 +219,10 @@ if __name__ == "__main__":
     # split validation and testing data into "batches" (to fit into the memory)
     evaluation_sets = {}
     for evaluation_set_name, evaluation_set_fn in dataset.get_evaluation_sets():
+        evaluation_batch_size = dataset.batch_size * 5
         evaluation_set_sentences, evaluation_set_sentence_lens, evaluation_set_target_sentences = evaluation_set_fn()
         num_eval_samples = len(evaluation_set_sentences)
-        num_eval_bins = np.ceil(num_eval_samples / dataset.batch_size)
+        num_eval_bins = np.ceil(num_eval_samples / evaluation_batch_size)
 
         # print('{} : {} : {}'.format(evaluation_set_name, num_eval_samples, num_eval_bins))
         eval_set_input_sentences = np.array_split(evaluation_set_sentences, num_eval_bins)
@@ -247,14 +248,13 @@ if __name__ == "__main__":
             network.train(input_sentences, sentence_lens, target_sentences, args.keep_prob)
             end = time.time()
 
-            print('Trained')
-
             if step_number % args.log_every == 0:
                 eval_time_start = time.time()
                 string_summary = "{}/{}, epoch: {}, time/batch = {:.3f}".format(step_number,
                                                                                 args.epochs * dataset.num_batches,
                                                                                 epoch, end - start)
                 for eval_set_name in evaluation_sets.keys():
+                    print('Evaluating {}'.format(eval_set_name))
                     string_summary += "\n  {}".format(eval_set_name)
                     eval_set_input_sentences, eval_set_sentence_lens, eval_set_target_sentences = evaluation_sets[
                         eval_set_name]
@@ -273,18 +273,16 @@ if __name__ == "__main__":
                         len_cumsum = np.cumsum(eval_set_sentence_len)[:-1]
                         eval_partial_set_result = np.array_split(eval_partial_set_result, len_cumsum)
 
-                        print(len(eval_partial_set_result), len(eval_set_input_sentence), len(eval_set_sentence_len),
-                              len(eval_set_target_sentence))
 
                         predictions += list(eval_partial_set_result)
                         lengths += list(eval_set_sentence_len)
                         targets += list(eval_set_target_sentence)
 
-                    print(len(predictions), len(lengths), len(targets))
                     eval_set_middle_time = time.time()
 
                     summaries = []
                     for metric_name, metric_fn in evaluation_metrics.items():
+                        print('  --metric: {}'.format(metric_name))
                         metric_start_time = time.time()
                         result = metric_fn(predictions, lengths, targets, target_char_vocab)
                         metric_end_time = time.time()
