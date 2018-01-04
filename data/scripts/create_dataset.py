@@ -5,6 +5,7 @@ import io
 import sys
 from hashlib import md5
 from collections import defaultdict
+from nltk.tokenize import word_tokenize
 
 '''
 input stream:
@@ -12,6 +13,7 @@ input stream:
     - lines
 
 for train: at least given number of characters, enough of diacritics
+word tokenize each sentence
 split into train/dev/test
 '''
 
@@ -96,6 +98,9 @@ def main():
                 else:
                     # should never happen
                     raise ValueError('Something went terribly wrong.')
+
+            # word tokenize line
+            line = ' '.join(word_tokenize(line))
 
             current_target_writer.write(u'{}\n'.format(line))
 
