@@ -11,6 +11,7 @@ import os
 import sys
 import time
 import tensorflow as tf
+from glob import glob
 
 import numpy as np
 from six.moves import cPickle
@@ -72,6 +73,8 @@ if __name__ == "__main__":
     parser.add_argument("--log_every", default=500, type=int, help="Interval for logging models (Tensorboard).")
     parser.add_argument("--num_test", default=1000, type=int, help="Number of samples to test on.")
 
+    parser.add_argument("--restore", type=str,
+                        help="Restore model from this checkpoint and continue training from it. Can be a shell-style wildcard expandable exactly to one directory.")
     # arguments for various experiments
     parser.add_argument("--num_sentences", default=-1, type=int,
                         help="Number of sentences to read from train file (-1 == read all sentences).")
@@ -125,7 +128,8 @@ if __name__ == "__main__":
 
     use_additive_targets = args.use_additive_targets
 
-    def czech_additive_targets_function(sentence, verbose = False):
+
+    def czech_additive_targets_function(sentence, verbose=False):
         output = ''
         comma_set = {u'í', u'á', u'é', u'ý', u'ú', u'ó'}
         hook_set = {u'ž', u'ř', u'š', u'č', u'ď', u'ť', u'ň'}
@@ -140,11 +144,12 @@ if __name__ == "__main__":
             elif lowered_char in circle_set:
                 output += '3'
             elif lowered_char.isspace():
-                output += ' ' # keep space (required for metrics)
+                output += ' '  # keep space (required for metrics)
             else:
                 output += '0'  # keep character
 
         return output
+
 
     if use_additive_targets:
         target_sentences = map(lambda x: czech_additive_targets_function(x), target_sentences)
@@ -216,10 +221,21 @@ if __name__ == "__main__":
         lm_loss_weigth=args.lm_loss_weight
     )
 
+    if args.restore:
+        checkpoint_path = glob(args.restore) # expand possible wildcard
+        if len(checkpoint_path) == 0:
+            raise ValueError('Restore parameter provided ({}), but no such folder exists.'.format(args.restore))
+        elif len(checkpoint_path) > 1:
+            raise ValueError('Restore parameter provided ({}), but multiple such folders exist.'.format(args.restore))
+
+        checkpoint_path = checkpoint_path[0]
+        logging.info('Restoring model from: {}'.format(checkpoint_path))
+        network.restore(checkpoint_path)
+
     # split validation and testing data into "batches" (to fit into the memory)
     evaluation_sets = {}
     for evaluation_set_name, evaluation_set_fn in dataset.get_evaluation_sets():
-        evaluation_batch_size = dataset.batch_size * 5
+        evaluation_batch_size = dataset.batch_size * 3
         evaluation_set_sentences, evaluation_set_sentence_lens, evaluation_set_target_sentences = evaluation_set_fn()
         num_eval_samples = len(evaluation_set_sentences)
         num_eval_bins = np.ceil(num_eval_samples / evaluation_batch_size)
@@ -272,7 +288,6 @@ if __name__ == "__main__":
                         # eval_partial_set_result is a linearized list of dimension [ sum_i(eval_set_sentence_len[i])]
                         len_cumsum = np.cumsum(eval_set_sentence_len)[:-1]
                         eval_partial_set_result = np.array_split(eval_partial_set_result, len_cumsum)
-
 
                         predictions += list(eval_partial_set_result)
                         lengths += list(eval_set_sentence_len)
