@@ -14,6 +14,7 @@ import os
 from collections import defaultdict
 import time
 import sys
+import numpy as np
 
 def get_uppers(tokens_lists):
     '''
@@ -86,7 +87,7 @@ def calculate_translation_model(file_with_input_sentences, file_with_target_sent
                                 verbose=False):
     '''
     Calculates translation model, which is a dictionary in form:
-        tm['word_without_diacritics']['diacritized_variant'] = occurrence_count
+        tm['word_without_diacritics']['diacritized_variant'] = log10(# diacritized_variant / sum (# possible_diacritizations))
     '''
 
     translation_model_dictionary = defaultdict(defaultdict_ctor)
@@ -95,7 +96,11 @@ def calculate_translation_model(file_with_input_sentences, file_with_target_sent
         with open(file_with_target_sentences, 'r') as target_reader:
             start_time = time.time()
             for i, (input_line, target_line) in enumerate(zip(input_reader, target_reader)):
-                input_words, target_words = input_line.split(' '), target_line.split(' ')
+                input_words, target_words = input_line.strip().split(' '), target_line.strip().split(' ')
+                if len(input_words) != len(target_words):
+                    print('Skipping, not same number of words on line.')
+                    continue
+
                 for input_word, target_word in zip(input_words, target_words):
                     translation_model_dictionary[input_word][target_word] += 1
 
@@ -106,6 +111,13 @@ def calculate_translation_model(file_with_input_sentences, file_with_target_sent
 
                 if i > num_traning_sentences:
                     break
+
+    # create probabilities instead of counts
+    for base_key, value in translation_model_dictionary.items():
+        num_words = np.sum(list(translation_model_dictionary[base_key].values()))
+        for target_key, target_key_occurence_count in translation_model_dictionary[base_key].items():
+            translation_model_dictionary[base_key][target_key] = np.log10(target_key_occurence_count / num_words)
+
     if verbose:
         print('Translation model size: {}'.format(len(translation_model_dictionary)))
 
