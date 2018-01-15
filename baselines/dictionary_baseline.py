@@ -55,7 +55,7 @@ def generate_diacritics(token_list, lexicon, lm, tm_weight):
             else:
                 # if no language model is provided, apply the most frequent translation
                 if lm == None:
-                    token_list[index] = sorted(lexicon[token].items(), key=lambda x: -x[1])[0][0]
+                    token_list[index] = max(lexicon[token].items(), key=lambda x: x[1])[0]
                 else:
                     # otherwise store an index of word on which to use language model
                     indices.append(index)
