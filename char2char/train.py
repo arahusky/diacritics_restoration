@@ -154,6 +154,20 @@ if __name__ == "__main__":
     if use_additive_targets:
         target_sentences = map(lambda x: czech_additive_targets_function(x), target_sentences)
 
+    if args.restore:
+        checkpoint_path = glob(args.restore) # expand possible wildcard
+
+        if len(checkpoint_path) == 0:
+            raise ValueError('Restore parameter provided ({}), but no such folder exists.'.format(args.restore))
+        elif len(checkpoint_path) > 1:
+            raise ValueError('Restore parameter provided ({}), but multiple such folders exist.'.format(args.restore))
+
+        checkpoint_path = checkpoint_path[0]
+
+        with open(os.path.join(checkpoint_path, 'vocab.pkl'), 'rb') as f:
+            input_char_vocab, target_char_vocab = cPickle.load(f)
+
+
     dataset = parallelsentences_chars.ParalelSentencesDataset(args.batch_size, args.max_chars, input_sentences,
                                                               target_sentences, args.train_perc, args.validation_perc,
                                                               args.test_perc, input_char_vocab, target_char_vocab,
@@ -222,13 +236,6 @@ if __name__ == "__main__":
     )
 
     if args.restore:
-        checkpoint_path = glob(args.restore) # expand possible wildcard
-        if len(checkpoint_path) == 0:
-            raise ValueError('Restore parameter provided ({}), but no such folder exists.'.format(args.restore))
-        elif len(checkpoint_path) > 1:
-            raise ValueError('Restore parameter provided ({}), but multiple such folders exist.'.format(args.restore))
-
-        checkpoint_path = checkpoint_path[0]
         logging.info('Restoring model from: {}'.format(checkpoint_path))
         network.restore(checkpoint_path)
 
@@ -254,6 +261,7 @@ if __name__ == "__main__":
 
     # Train
     print('Training')
+    sys.stdout.flush()
     for epoch in range(args.epochs):
         dataset.reset_batch_pointer()
         for batch_ind in range(dataset.num_batches):
