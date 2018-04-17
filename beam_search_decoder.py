@@ -2,19 +2,19 @@
 
 from __future__ import print_function
 
-import os
 import sys
 import time
 
 import numpy as np
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from common import utils
 from common import constants
 
 
 def prepare_data(sentence, input_char_vocab):
+    '''
+    Converts given sentence to format appropriate for the neural model.
+    '''
     inputs = np.zeros(len(sentence), dtype=np.int32)
     for i, char in enumerate(sentence):
         if char in input_char_vocab:
@@ -30,6 +30,9 @@ def prepare_data(sentence, input_char_vocab):
 
 
 def evaluate_sentence_lm(language_model, hyp, vocabulary, original_sentence, eos=False):
+    '''
+    Computes language model probability of given hypothesis.
+    '''
     # print(u''.join([utils.value_to_key(char, vocabulary) for char in tokens]))
     # print(tokens)
 
@@ -42,10 +45,12 @@ def evaluate_sentence_lm(language_model, hyp, vocabulary, original_sentence, eos
     return normalized_lm_log_prob
 
 
-def sort_hypotheses(hyps, gamma=-1, normalized_lmscores=[]):
+def sort_hypotheses(hyps, gamma=0, normalized_lmscores=[]):
     """Sort hypotheses based on log probs and length.
     Args:
         hyps: A list of hypothesis.
+        gamma: language model weight
+        normalized_lmscores: language model scores for respective hypotheses
     Returns:
         hyps: A list of sorted hypothesis in reverse log_prob order.
     """
@@ -64,30 +69,20 @@ def sort_hypotheses(hyps, gamma=-1, normalized_lmscores=[]):
 
 
 def hypothesis_to_sentence(hyp, target_char_vocabulary, original_sentence):
+    '''
+    Converts given hypothesis (integer indices) to sentence (characters).
+    '''
     sentence = u''
     for i, char in enumerate(hyp.tokens):
         predicted_symbol = utils.value_to_key(char, target_char_vocabulary)
         if predicted_symbol == constants.UNKNOWN_SYMBOL:
             # if predicting unknown, copy corresponding input character
             sentence += original_sentence[i]
-        elif predicted_symbol == u'\u6666':
-            sentence += u'dj'
         else:
             sentence += predicted_symbol
 
     return sentence
 
-
-def can_be_diacritized(char):
-    CZECH_CHARACTERS_REST = u'abcdefghijklmnopqrstuvwxyz' + u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    #
-    return char in CZECH_CHARACTERS_REST
-    #
-    # DIACRITIZABLE_CHARS = u'djczs' + u'\u6666' + u'DJCZS'
-    # return char in DIACRITIZABLE_CHARS
-
-
-#
 
 class Hypothesis(object):
     """A class that represents a single hypothesis in a beam."""
@@ -101,10 +96,6 @@ class Hypothesis(object):
         self.tokens = tokens
         self.token_probabilities = token_probabilities
 
-        # self.language_model_probality = None
-
-        # print('Constructing new Hypothesis with state shape: {}'.format(state.shape))
-
     def extend(self, token, token_probability):
         """Return an extended version of the hypothesis.
         Arguments:
@@ -112,16 +103,6 @@ class Hypothesis(object):
             token_probability: The log probability of emitting this token
         """
         return Hypothesis(self.tokens + [token], self.token_probabilities + [token_probability])
-
-    # def add_language_model_prob(self, lm_log_prob):
-    #     # print('Log prob before: {}'.format(self.log_prob))
-    #
-    #     self.language_model_probality = lm_log_prob
-    #
-    #     # lm_log_prob_normalized = lm_log_prob / (1 + len(sentence.split()))
-    #
-    #     # self.log_prob = (1 - gamma_weight) * self.log_prob + gamma_weight * lm_log_prob
-    #     # print('Log prob after: {}'.format(self.log_prob))
 
     @property
     def latest_token(self):
@@ -142,14 +123,14 @@ class BeamSearchDecoder(object):
                  gamma_weight=0, whitespace_to_whitespace=True):
         """Construct a new instance of the runner.
         Arguments:
-            c2c_model: Char2charmodel used for decoding
+            c2c_model: Neural model used for decoding
             input_char_vocabulary: The vocabulary of decoder's inputs
             target_char_vocabulary: The vocabulary of decoder's targets
             beam_size: How many alternative hypotheses to run
             language_model: Language model to incorporate for weighting hypothesis, None if not use
             gamma_weight: after each word, sentence is evaluated with language model and its probability is added to current sentence probability with lambda_weight coefficient
             whitespace_to_whitespace: if True, all whitespaces in the generated sentence are the same whitespaces as in the source sentence, i.e. no whitespaces are added or removed.
-             If False, there is no control above this (any character can become any character).
+             If False, there is no control above this (any character may become any character).
         """
         self.c2c_model = c2c_model
         self.input_char_vocabulary = input_char_vocabulary
@@ -166,7 +147,7 @@ class BeamSearchDecoder(object):
     def __call__(self, sess, dataset):
         """
         Arguments:
-            sess: The spell-check session to use for computation
+            sess: The session to use for computation
             dataset: The dataset to run the model on (list of sentences)
         """
         decoded_sentences = []
@@ -178,16 +159,11 @@ class BeamSearchDecoder(object):
             # print('Decoder max steps: {}'.format(decoder_max_step))
             start_time = time.time()
 
-            # Run the encoder.
-            # We want to fetch all the RNN outputs for each encoder step, and also the initial state of the decoder
-
             feed = {self.c2c_model.input_sentences: inputs,
                     self.c2c_model.sentence_lens: input_lens,
                     self.c2c_model.keep_prob: 1.0}
 
             outputs_softmax = sess.run(self.c2c_model.outputs_softmax, feed_dict=feed)
-
-            # print(outputs_softmax.shape)
 
             hyps = [Hypothesis([], [])]
 
@@ -199,11 +175,13 @@ class BeamSearchDecoder(object):
 
                     if self.whitespace_to_whitespace:
                         # map whitespace character to whitespace character
-                        if sentence[char_index].isspace() or not can_be_diacritized(sentence[char_index]):
+                        if sentence[char_index].isspace():
                             if sentence[char_index] not in self.target_char_vocabulary:
-                                candidate_hyps.append(hyp.extend(self.target_char_vocabulary[constants.UNKNOWN_SYMBOL], 0.0))
+                                candidate_hyps.append(
+                                    hyp.extend(self.target_char_vocabulary[constants.UNKNOWN_SYMBOL], 0.0))
                             else:
-                                candidate_hyps.append(hyp.extend(self.target_char_vocabulary[sentence[char_index]], 0.0))
+                                candidate_hyps.append(
+                                    hyp.extend(self.target_char_vocabulary[sentence[char_index]], 0.0))
                         else:
                             indices_sorted = np.argsort(character_probabilities)[
                                              ::-1]  # sort probabilities (descending order)
@@ -235,7 +213,8 @@ class BeamSearchDecoder(object):
                     for hyp in candidate_hyps:
                         if sentence[char_index] == ' ' or char_index == len(sentence) - 1:
                             # TODO add LM eof flag
-                            normalized_lm_probability = evaluate_sentence_lm(self.language_model, hyp, self.target_char_vocabulary,
+                            normalized_lm_probability = evaluate_sentence_lm(self.language_model, hyp,
+                                                                             self.target_char_vocabulary,
                                                                              sentence)
                             # print(u'Result_: {}, log_prob: {}, log_prob_normalized: {}'.format(hypothesis_to_sentence(hyp, self.target_char_vocabulary), hyp.log_prob,
                             #                                                                    hyp.log_prob / len(hyp.tokens)))

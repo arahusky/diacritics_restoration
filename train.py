@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import division
-from __future__ import print_function
-
 import datetime
 import io
 import logging
@@ -16,38 +13,35 @@ from glob import glob
 import numpy as np
 from six.moves import cPickle
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import parallelsentences_chars
+import dataset
 from common import utils
 from network import Network
 from common import metrics
 
 if __name__ == "__main__":
-    # Fix random seed
+    # Set random seed
     np.random.seed(42)
 
     # Parse arguments
     import argparse
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("dataset", default='', type=str,
+                        help="Path to dataset configuration file storing files for train, dev and test.")
+
     parser.add_argument("--exp_name", default='', type=str, help="Experiment name.")
     parser.add_argument("--batch_size", default=100, type=int, help="Batch size.")
     parser.add_argument("--embedding", default=200, type=int,
-                        help="Embedding dimension. One hot is used if <1. It is highly recomended that embedding == rnn_cell_dim")
+                        help="Embedding dimension. One hot is used if <1. It is highly recommended that embedding == rnn_cell_dim")
 
-    parser.add_argument("--dataset", default='', type=str,
-                        help="Path to dataset configuration file storing files for train, dev and test.")
     parser.add_argument("--input_char_vocab", default='', type=str,
                         help="Path to file storing input char vocabulary. If no provided, is automatically computed from data.")
     parser.add_argument("--target_char_vocab", default='', type=str,
                         help="Path to file storing target char vocabulary. If no provided, is automatically computed from data.")
     parser.add_argument("--num_top_chars", default=-1, type=int,
                         help="Take only num_top_chars most occuring characters. All other will be considered UNK")
-    parser.add_argument('--use_additive_targets', action='store_true', default=False,
-                        help="Default targets are direct letters, this argument sets targets to be like 'add colon above'")
 
-    parser.add_argument("--max_chars", default=100, type=int, help="Maximum number of characters in a sentence.")
+    parser.add_argument("--max_chars", default=200, type=int, help="Maximum number of characters in a sentence.")
     parser.add_argument("--epochs", default=10, type=int, help="Number of epochs.")
     parser.add_argument("--logdir", default="logs", type=str, help="Logdir name.")
     parser.add_argument("--savedir", default="save", type=str, help="Savedir name.")
@@ -66,16 +60,15 @@ if __name__ == "__main__":
     parser.add_argument("--threads", default=8, type=int, help="Maximum number of threads to use.")
 
     parser.add_argument('--use_residual', action='store_true', default=False,
-                        help="If set, residual connections will be used in the char2char model.")
-    parser.add_argument('--lm_loss_weight', default=0, type=float, help="Language model loss weight.")
+                        help="If set, residual connections will be used in the model.")
 
-    parser.add_argument("--save_every", default=1000, type=int, help="Interval for saving models.")
-    parser.add_argument("--log_every", default=500, type=int, help="Interval for logging models (Tensorboard).")
+    parser.add_argument("--save_every", default=2000, type=int, help="Interval for saving models.")
+    parser.add_argument("--log_every", default=1000, type=int, help="Interval for logging models (Tensorboard).")
     parser.add_argument("--num_test", default=1000, type=int, help="Number of samples to test on.")
 
     parser.add_argument("--restore", type=str,
                         help="Restore model from this checkpoint and continue training from it. Can be a shell-style wildcard expandable exactly to one directory.")
-    # arguments for various experiments
+
     parser.add_argument("--num_sentences", default=-1, type=int,
                         help="Number of sentences to read from train file (-1 == read all sentences).")
 
@@ -84,9 +77,6 @@ if __name__ == "__main__":
     experiment_name = args.exp_name
     experiment_name += '_layers{}_dim{}_embedding{}_lr{}'.format(args.num_layers, args.rnn_cell_dim,
                                                                  args.embedding, args.learning_rate)
-
-    if args.dataset == '':
-        raise ValueError('No dataset provided. Use --dataset argument.')
 
     # create save directory for current experiment's data (if not exists)
     save_data_dir = os.path.join(args.savedir, experiment_name)
@@ -126,36 +116,8 @@ if __name__ == "__main__":
     if args.target_char_vocab != '':
         target_char_vocab = utils.load_vocabulary(args.target_char_vocab)
 
-    use_additive_targets = args.use_additive_targets
-
-
-    def czech_additive_targets_function(sentence, verbose=False):
-        output = ''
-        comma_set = {u'í', u'á', u'é', u'ý', u'ú', u'ó'}
-        hook_set = {u'ž', u'ř', u'š', u'č', u'ď', u'ť', u'ň'}
-        circle_set = {u'ů', u'ö'}
-
-        for char in sentence:
-            lowered_char = char.lower()
-            if lowered_char in comma_set:
-                output += '1'
-            elif lowered_char in hook_set:
-                output += '2'
-            elif lowered_char in circle_set:
-                output += '3'
-            elif lowered_char.isspace():
-                output += ' '  # keep space (required for metrics)
-            else:
-                output += '0'  # keep character
-
-        return output
-
-
-    if use_additive_targets:
-        target_sentences = map(lambda x: czech_additive_targets_function(x), target_sentences)
-
     if args.restore:
-        checkpoint_path = glob(args.restore) # expand possible wildcard
+        checkpoint_path = glob(args.restore)  # expand possible wildcard
 
         if len(checkpoint_path) == 0:
             raise ValueError('Restore parameter provided ({}), but no such folder exists.'.format(args.restore))
@@ -167,11 +129,10 @@ if __name__ == "__main__":
         with open(os.path.join(checkpoint_path, 'vocab.pkl'), 'rb') as f:
             input_char_vocab, target_char_vocab = cPickle.load(f)
 
-
-    dataset = parallelsentences_chars.ParalelSentencesDataset(args.batch_size, args.max_chars, input_sentences,
-                                                              target_sentences, args.train_perc, args.validation_perc,
-                                                              args.test_perc, input_char_vocab, target_char_vocab,
-                                                              args.num_top_chars)
+    dataset = dataset.ParalelSentencesDataset(args.batch_size, args.max_chars, input_sentences,
+                                              target_sentences, args.train_perc, args.validation_perc,
+                                              args.test_perc, input_char_vocab, target_char_vocab,
+                                              args.num_top_chars)
 
     if 'dev_inputs' in dataset_files:
         print('Loading validation data')
@@ -181,9 +142,6 @@ if __name__ == "__main__":
 
         with io.open(dataset_files['dev_targets'], 'r', encoding='utf8') as reader:
             dev_target_sentences = reader.read().splitlines()
-
-        if use_additive_targets:
-            dev_target_sentences = map(lambda x: czech_additive_targets_function(x), dev_target_sentences)
 
         dataset.add_validation_set(dev_input_sentences, dev_target_sentences)
 
@@ -195,9 +153,6 @@ if __name__ == "__main__":
 
         with io.open(dataset_files['test_targets'], 'r', encoding='utf8') as reader:
             test_target_sentences = reader.read().splitlines()
-
-        if use_additive_targets:
-            test_target_sentences = map(lambda x: czech_additive_targets_function(x), test_target_sentences)
 
         dataset.add_test_set(test_input_sentences, test_target_sentences)
 
@@ -226,13 +181,9 @@ if __name__ == "__main__":
         rnn_cell_dim=args.rnn_cell_dim,
         num_layers=args.num_layers,
         embedding_dim=args.embedding,
-        logdir=args.logdir,
-        expname=experiment_name,
         threads=args.threads,
-        timestamp=timestamp,
         learning_rate=args.learning_rate,
         use_residual_connections=args.use_residual,
-        lm_loss_weigth=args.lm_loss_weight
     )
 
     if args.restore:
@@ -326,6 +277,7 @@ if __name__ == "__main__":
                 string_summary += "\n Evaluation took : {}".format(eval_time_end - eval_time_start)
 
                 logging.info(string_summary)
+                print(string_summary)
 
             if step_number % args.save_every == 0:
                 checkpoint_path = os.path.join(save_model_dir, 'model.ckpt')

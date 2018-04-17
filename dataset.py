@@ -13,7 +13,7 @@ class ParalelSentencesDataset():
 
     This class has two basic usage scenarios:
         - user has only one input and one target file and wants to create train, validation and test set (randomly) from them. In this case, instantiate this class with
-        appropriate constants (train_perc, valid_perc and test_perc) and call build to prepare batches
+        appropriate constants (train_perc, valid_perc and test_perc) and call build to prepare batches.
         - user has separate train, validation and test input and target files. In this case, ignore (set default values) those constants and use add_validation_set and
         use_test_set to add validation and test sets. After that, call build to prepare batches.
 
@@ -35,7 +35,6 @@ class ParalelSentencesDataset():
         :param take_num_top_chars: take only this number of most occuring characters -- all other are considered UNK
         '''
 
-        # TODO input_vocab versub vocab as a tuple
         self.batch_size = batch_size
         self.max_chars_in_sentence = max_chars_in_sentence
 
@@ -72,20 +71,20 @@ class ParalelSentencesDataset():
         # first remove too long sentences and create vocabulary
         all_input_characters, all_target_characters = Counter(), Counter()
         num_input_sentences = len(self.input_sentences)
-        self.input_sentences, self.target_sentences, train_input_characters, train_target_characters, num_removed = self.remove_long_samples_and_build_vocab(
+        self.input_sentences, self.target_sentences, train_input_characters, train_target_characters, num_removed = self._remove_long_samples_and_build_vocab(
             self.input_sentences, self.target_sentences)
         print('{}/{} train samples were removed due to their length.'.format(num_removed, num_input_sentences))
         all_input_characters.update(train_input_characters)
         all_target_characters.update(train_target_characters)
 
         if self.validation_input_sentences != None:
-            self.validation_input_sentences, self.validation_target_sentences, validation_input_characters, validation_target_characters = self.build_vocab(
+            self.validation_input_sentences, self.validation_target_sentences, validation_input_characters, validation_target_characters = self._build_vocab(
                 self.validation_input_sentences, self.validation_target_sentences)
             all_input_characters.update(validation_input_characters)
             all_target_characters.update(validation_target_characters)
 
         if self.test_input_sentences != None:
-            self.test_input_sentences, self.test_target_sentences, test_input_characters, test_target_characters = self.build_vocab(
+            self.test_input_sentences, self.test_target_sentences, test_input_characters, test_target_characters = self._build_vocab(
                 self.test_input_sentences, self.test_target_sentences)
             all_input_characters.update(test_input_characters)
             all_target_characters.update(test_target_characters)
@@ -100,9 +99,6 @@ class ParalelSentencesDataset():
 
             char_vocabulary = {x: i for i, x in enumerate(characters)}
             char_vocabulary[constants.UNKNOWN_SYMBOL] = len(characters)
-            # char_vocabulary[constants.EOS_SYMBOL] = len(characters) + 1
-            # char_vocabulary[constants.GO_SYMBOL] = len(characters) + 2
-            # char_vocabulary[constants.PAD_SYMBOL] = len(characters) + 3
 
             return char_vocabulary
 
@@ -119,7 +115,7 @@ class ParalelSentencesDataset():
         # self.input_char_vocab_size = len(characters)
 
         # second step is transforming sentences into sequences of IDs rather than sequences of characters
-        input_data, target_data, max_decoder_word_chars = self.preprocess(self.input_sentences, self.target_sentences)
+        input_data, target_data, max_decoder_word_chars = self._preprocess(self.input_sentences, self.target_sentences)
         self.input_sentences, self.target_sentences = None, None  # forget no more necessary data
         self.max_decoder_word_chars = max_decoder_word_chars  # number of characters in the longest word
 
@@ -128,22 +124,22 @@ class ParalelSentencesDataset():
             self.num_batches = int(len(input_data) / self.batch_size)  # number of train batches prepared
 
             if self.validation_input_sentences != None:
-                self.validation_xdata, self.validation_ydata, valid_max_decoder_word_chars = self.preprocess(
+                self.validation_xdata, self.validation_ydata, valid_max_decoder_word_chars = self._preprocess(
                     self.validation_input_sentences, self.validation_target_sentences)
                 self.validation_input_sentences, self.validation_target_sentences = None, None  # forget no more necessary data
                 self.max_decoder_word_chars = max(self.max_decoder_word_chars, valid_max_decoder_word_chars)
 
             if self.test_input_sentences != None:
-                self.test_xdata, self.test_ydata, test_max_decoder_word_chars = self.preprocess(
+                self.test_xdata, self.test_ydata, test_max_decoder_word_chars = self._preprocess(
                     self.test_input_sentences, self.test_target_sentences)
                 self.test_input_sentences, self.test_target_sentences = None, None  # forget no more necessary data
                 self.max_decoder_word_chars = max(self.max_decoder_word_chars, test_max_decoder_word_chars)
         else:
-            self.split_train_data(input_data, target_data, self.train_perc, self.validation_perc, self.test_perc)
+            self._split_train_data(input_data, target_data, self.train_perc, self.validation_perc, self.test_perc)
 
         self.reset_batch_pointer()
 
-    def remove_long_samples_and_build_vocab(self, input_sentences, target_sentences):
+    def _remove_long_samples_and_build_vocab(self, input_sentences, target_sentences):
         data_inputs_shortened, data_targets_shortened = [], []
 
         # remove too long (short) samples and split each sentence into words (split by space)
@@ -164,7 +160,7 @@ class ParalelSentencesDataset():
 
         return data_inputs_shortened, data_targets_shortened, input_characters, target_characters, num_samples_removed
 
-    def build_vocab(self, input_sentences, target_sentences):
+    def _build_vocab(self, input_sentences, target_sentences):
         data_inputs_shortened, data_targets_shortened = [], []
 
         # split each sentence into words (split by space)
@@ -182,7 +178,7 @@ class ParalelSentencesDataset():
 
         return data_inputs_shortened, data_targets_shortened, input_characters, target_characters
 
-    def preprocess(self, input_sentences, target_sentences):
+    def _preprocess(self, input_sentences, target_sentences):
 
         max_decoder_word_chars = 0  # maximal number of characters in a single decoder word
 
@@ -209,7 +205,7 @@ class ParalelSentencesDataset():
 
         return input_data, target_data, max_decoder_word_chars
 
-    def split_train_data(self, input_data, target_data, train_percentage, valid_percentage, test_percentage):
+    def _split_train_data(self, input_data, target_data, train_percentage, valid_percentage, test_percentage):
         '''
         Splits input_data into train, validation and test sets
         '''
@@ -325,12 +321,12 @@ class ParalelSentencesDataset():
         return batch_inputs, batch_input_lens, batch_targets
 
     def get_evaluation_sets(self):
-        return [('dev', self.get_validation_set)]
-        # return [('dev', self.get_validation_set), ('test', self.get_test_set)]
+        # return [('dev', self.get_validation_set)]
+        return [('dev', self.get_validation_set), ('test', self.get_test_set)]
 
     def reset_batch_pointer(self):
         '''
-        Resets batch pointer and permutates array. Call this after end of every epoch.
+        Resets batch pointer and permutes array. Call this after end of every epoch.
         '''
         permutation = np.random.permutation(len(self.train_xdata))
 

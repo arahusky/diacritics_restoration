@@ -13,7 +13,7 @@ languages_long=${2:-"ces"}
 # abbreviations from https://ufal.mff.cuni.cz/~majlis/w2c/download.html
 # vie ron lat ces slk gle fra hun pol slv hrv spa tur srp
 
-save_dir=~/troja/diacritization_data/
+save_dir=${3:-"/tmp"}
 
 statmt_datafiles=(2017_17) # 2016_50)
 

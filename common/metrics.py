@@ -20,9 +20,6 @@ def c2c_per_word_accuracy(sentences, lengths, targets, vocabulary, whitespace_to
 
     inverted_vocab = utils.invert_vocabulary(vocabulary)
 
-    debug = 0
-
-    print(len(sentences), len(lengths), len(targets))
     for system, length, gold in zip(sentences, lengths, targets):
         system_sentence, gold_sentence = '', ''
         for system_int, gold_int in zip(system[:length], gold[:length]):
@@ -38,13 +35,6 @@ def c2c_per_word_accuracy(sentences, lengths, targets, vocabulary, whitespace_to
             system_sentence += system_char
             gold_sentence += gold_char
 
-        # if debug < 1:
-        #     print(sentences[0])
-        #     print(targets[0])
-        #     print(lengths[0])
-        #     print(system_sentence)
-        #     print(gold_sentence)
-        #     debug += 1
         gold, system = map(lambda s: s.split(" "), [gold_sentence, system_sentence])
         total_words += len(gold)
 

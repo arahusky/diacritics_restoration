@@ -1,12 +1,23 @@
-W2C to train, devel and test
+Scripts for creating training corpora for various languages
 ----
 
+This folder stores scripts that create corpus for training diacritics restoration systems. The data are downloaded from two web sources.
+
+To prepare data from both sources for selected language (see table below), run:
+
 ```
-bash process_w2c.sh slk sk /home/arahusky/troja/w2c_data/cs
+bash prepare_data_for_language.sh slk sk my_data_dir
+
+```
+
+To prepare Wiki data only, run:
+
+```
+bash process_w2c.sh slk sk my_data_dir/sk
 ```
 
 
-STATMT create additional train set
+To create additional training set from Web, run:
 -----
 
 ```
