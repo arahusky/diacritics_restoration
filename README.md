@@ -15,9 +15,11 @@ It reduces word error rate of the stronger contextual baseline (which is a previ
 ### Prepare dataset
 
 The dataset for 12 languages can be obtained from https://lindat.mff.cuni.cz/repository/xmlui/handle/11234/1-2607 or downloaded using custom scripts that are located in *data* folder (see *data/README.md* for more information on how to download data).
-After
+After that, diacritics can be removed from all texts using *data/diacritization_stripping.py* script (the text with stripped diacritics is printed on standard output).
 
-# TODO remove diacritics and create dataset config file
+Finally, our training script requires paths to data to be specified in a separate configuration file.
+Each line of this configuration file stores space delimited pair of set information (e.g. *train_inputs*) and path to the specified file.
+Sample dataset configuration file is located at *data/sample_dataset_config.txt*.
 
 ### Training
 
@@ -35,7 +37,13 @@ This will store model checkpoints to save/exp_name/timestep directory and Tensor
 
 ### Using trained model for diacritizing text
 
-To
+To infer the trained model, *infer.py* script is used. Sample usage of this script is as follows:
+
+```
+python3 infer.py undiacritized_text.txt diacritized_text.txt save/model/timestamp/ --lm path_to_lm --beam_size 8 --alpha 0.5
+```
+
+Note that you may decide not to use language model for generating diacritics (faster predictions but possibly lower performance) -- in this case, omit last three arguments.
 
 ## Requirements:
 
@@ -46,5 +54,3 @@ To
 ## Citing
 
 If you use this code in your work, please consider citing our paper: "Diacritics Restoration Using Neural Networks", Jakub Náplava, Milan Straka, Pavel Straňák, Jan Hajič, LREC 2018.
-
-TODO
