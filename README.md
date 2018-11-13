@@ -1,6 +1,6 @@
 # Diacritics restoration using neural networks
 
-This project contains code for training, evaluating and inferring state-of-the-art models for diacritics restoration. This repository accompanies our paper to LREC2018.
+This project contains code for training, evaluating and inferring state-of-the-art models for diacritics restoration. This repository accompanies our paper (available at http://www.lrec-conf.org/proceedings/lrec2018/pdf/573.pdf) to LREC2018.
 
 ## Paper summary
 
@@ -53,4 +53,8 @@ Note that you may decide not to use language model for generating diacritics (fa
 
 ## Citing
 
-If you use this code in your work, please consider citing our paper: "Diacritics Restoration Using Neural Networks", Jakub Náplava, Milan Straka, Pavel Straňák, Jan Hajič, LREC 2018.
+If you use this code in your work, please consider citing our paper:
+
+```
+Diacritics Restoration Using Neural Networks, Jakub Náplava, Milan Straka, Pavel Straňák, Jan Hajič, LREC 2018.
+```
